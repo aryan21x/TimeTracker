@@ -1,38 +1,447 @@
-.App {
-  text-align: center;
+/* TimeTracker.css */
+.time-tracker-container {
+  padding: 2rem;
+  max-width: 700px;
+  margin: 0 auto;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.card {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.card h2,
+.card h3 {
+  margin-bottom: 1rem;
+  color: #333;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  margin-right: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s ease-in-out;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+textarea,
+input[type="file"] {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.entry {
+  border-bottom: 1px solid #ddd;
+  padding: 0.5rem 0;
+}
+
+.entry:last-child {
+  border-bottom: none;
+}
+
+
+/* Navbar.css */
+
+.navbar {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  justify-content: space-between;
+  background-color: #2c3e50;
+  padding: 1rem 2rem;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.logo {
+  cursor: pointer;
+}
+
+.logo-text {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #ecf0f1;
+}
+
+.menu {
+  display: flex;
+  gap: 1rem;
+}
+
+.menu-item {
+  color: #ecf0f1;
+  text-decoration: none;
+  padding: 0.5rem 0.8rem;
+  transition: background-color 0.2s ease-in-out;
+  border-radius: 6px;
+}
+
+.menu-item:hover {
+  background-color: #34495e;
+}
+
+.menu-item.active {
+  background-color: #1abc9c;
   color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.menu-button {
+  display: none;
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+/* Shared container styling */
+.summary-container,
+.settings-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #fdfdfd;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+h2 {
+  font-size: 1.8rem;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+/* Table styling for Summary */
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+
+.summary-table th,
+.summary-table td {
+  border: 1px solid #ccc;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.summary-table th {
+  background-color: #f4f4f4;
+  font-weight: 600;
+}
+
+/* Form styling for Settings */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+input[type="text"],
+select {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #fff;
+}
+
+button {
+  background-color: #3498db;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+
+.summary-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.auth-alert {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 1rem;
+}
+
+.action-buttons {
+  gap: 10px;
+  margin-bottom: 1rem;
+}
+
+button {
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.delete-my-entries {
+  background-color: #ff9800;
+}
+
+
+.user-hours-summary {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.user-hours-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.user-hours-list li {
+  margin-bottom: 8px;
+}
+
+.no-entries {
+  background-color: #e9ecef;
+  padding: 15px;
+  border-radius: 5px;
+}
+
+.entries-table-container {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+
+.entries-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.entries-table th,
+.entries-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+
+.entries-table th {
+  background-color: #f8f9fa;
+}
+
+/* Mobile styles */
+@media screen and (max-width: 768px) {
+  .menu {
+    display: none;
   }
-  to {
-    transform: rotate(360deg);
+
+  .menu-button {
+    display: block;
   }
+
+  .mobile-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #2c3e50;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .mobile-menu-item {
+    color: #ecf0f1;
+    text-decoration: none;
+    font-size: 1.1rem;
+  }
+
+  .mobile-menu-item.active {
+    font-weight: bold;
+    color: #1abc9c;
+  }
+}
+
+
+/* App.css */
+
+.time-tracker-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 1rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+h2 {
+  margin-bottom: 1rem;
+  font-size: 1.75rem;
+  color: #333;
+}
+
+h3 {
+  margin-top: 2rem;
+  font-size: 1.3rem;
+  color: #444;
+}
+
+.user-status,
+.clocked-in-status,
+.auth-alert {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: #f9f9f9;
+  border-left: 4px solid #007acc;
+  border-radius: 6px;
+}
+
+.auth-alert {
+  border-left-color: #e63946;
+  background-color: #fff5f5;
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+button {
+  flex: 1;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.clock-in-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.clock-in-btn.disabled,
+.clock-in-btn:disabled {
+  background-color: #a9dfbf;
+  cursor: not-allowed;
+}
+
+.clock-out-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.clock-out-btn.disabled,
+.clock-out-btn:disabled {
+  background-color: #f5b7b1;
+  cursor: not-allowed;
+}
+
+.spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.task-input {
+  margin-top: 1rem;
+}
+
+.task-input textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  resize: vertical;
+  margin-top: 0.5rem;
+}
+
+.task-input small {
+  display: block;
+  margin-top: 0.3rem;
+  color: #666;
+}
+
+.entries-section {
+  margin-top: 2rem;
+}
+
+.entries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.entry-item {
+  padding: 1rem;
+  background-color: #f7f7f7;
+  border-radius: 8px;
+  border-left: 4px solid #007acc;
+}
+
+.entry-task {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.entry-details {
+  font-size: 0.95rem;
+  color: #555;
 }
