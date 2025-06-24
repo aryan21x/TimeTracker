@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { auth, db } from "../services/firebase";
-import { 
-  collection, 
-  addDoc, 
-  getDocs, 
-  query, 
-  where, 
-  doc, 
+import {
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  where,
+  doc,
   setDoc,
   deleteDoc,
   onSnapshot,
@@ -16,7 +16,6 @@ import { onAuthStateChanged } from "firebase/auth";
 
 export default function TimeTracker() {
   const [clockInTime, setClockInTime] = useState(null);
-  const [clockOutTime, setClockOutTime] = useState(null);
   const [task, setTask] = useState("");
   const [entries, setEntries] = useState([]);
   const [user, setUser] = useState(null);
@@ -28,7 +27,7 @@ export default function TimeTracker() {
     if (!user) return;
 
     const userRef = doc(db, "activeClocks", user.uid);
-    
+
     // Load any existing clock-in
     const unsubscribe = onSnapshot(userRef, (doc) => {
       if (doc.exists()) {
@@ -58,11 +57,11 @@ export default function TimeTracker() {
 
   const loadEntries = async (currentUser) => {
     if (!currentUser) return;
-    
+
     try {
       console.log("Loading entries for user:", currentUser.uid);
       const q = query(
-        collection(db, "entries"), 
+        collection(db, "entries"),
         where("userId", "==", currentUser.uid),
         orderBy("clockInTime", "desc")
       );
@@ -75,6 +74,29 @@ export default function TimeTracker() {
     }
   };
 
+  const sendSlackNotification = async (message) => {
+  try {
+    const response = await fetch("https://zhoutracker.netlify.app/.netlify/functions/sendSlack", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text: message }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Slack function failed:", response.status, errorText);
+    } else {
+      console.log("Slack notification sent via Netlify function.");
+    }
+  } catch (err) {
+    console.error("Error sending Slack notification:", err);
+  }
+};
+
+
+
   const handleClockIn = async () => {
     const now = new Date().toISOString();
     try {
@@ -86,6 +108,19 @@ export default function TimeTracker() {
         lastUpdated: new Date().toISOString()
       });
       setClockInTime(now);
+
+      // --- Trigger Slack Notification for Clock-In ---
+      const userName = user.displayName || user.email;
+      const clockInTimeFormatted = new Date(now).toLocaleString([], {
+        year: 'numeric', month: 'numeric', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', timeZoneName: 'short' // Includes timezone
+      });
+      const slackMessage = `*${userName}* just clocked IN!
+      ⏱️ *Time:* ${clockInTimeFormatted}
+      📝 *Task (initial):* ${task || 'N/A'}`;
+      await sendSlackNotification(slackMessage);
+      // --- END Trigger ---
+
     } catch (err) {
       console.error("Clock-in failed:", err);
       alert("Failed to clock in");
@@ -110,7 +145,7 @@ export default function TimeTracker() {
 
     setSaving(true);
     const outTime = new Date().toISOString();
-    
+
     const newEntry = {
       userId: user.uid,
       username: user.displayName || user.email,
@@ -122,30 +157,50 @@ export default function TimeTracker() {
 
     try {
       console.log("Clocking out - creating entry:", newEntry);
-      
+
       // Save the completed entry first
       const docRef = await addDoc(collection(db, "entries"), newEntry);
       console.log("Entry saved with ID:", docRef.id);
-      
+
       // Delete active clock
       await deleteDoc(doc(db, "activeClocks", user.uid));
       console.log("Active clock deleted");
-      
+
       // Update local state immediately
       const entryWithId = { id: docRef.id, ...newEntry };
       setEntries(prev => [entryWithId, ...prev]);
-      
+
+      // --- Trigger Slack Notification for Clock-Out ---
+      const userName = user.displayName || user.email;
+      const clockInTimeFormatted = new Date(clockInTime).toLocaleString([], {
+        year: 'numeric', month: 'numeric', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+      });
+      const clockOutTimeFormatted = new Date(outTime).toLocaleString([], {
+        year: 'numeric', month: 'numeric', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+      });
+      const durationFormatted = calculateDuration(clockInTime, outTime); // Re-use your existing function
+
+      const slackMessage = `*${userName}* just clocked OUT!
+      ⏰ *Clock In:* ${clockInTimeFormatted}
+      🚪 *Clock Out:* ${clockOutTimeFormatted}
+      ⏳ *Duration:* ${durationFormatted}
+      📝 *Task:* ${newEntry.task}`;
+      await sendSlackNotification(slackMessage);
+      // --- END Trigger ---
+
       // Reset form
       setClockInTime(null);
-      setClockOutTime(null);
+      // setClockOutTime(null); // No need to set this, as it's a one-off for the entry
       setTask("");
-      
+
       console.log("Clock out completed successfully");
-      
+
     } catch (err) {
       console.error("Error during clock out:", err);
       alert("Failed to save entry: " + err.message);
-      
+
       // Reload entries to ensure consistency
       if (user) {
         await loadEntries(user);
@@ -157,9 +212,9 @@ export default function TimeTracker() {
 
   const formatTime = (isoString) => {
     if (!isoString) return "—";
-    return new Date(isoString).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return new Date(isoString).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -220,16 +275,16 @@ export default function TimeTracker() {
         )}
 
         <div className="button-group">
-          <button 
-            onClick={handleClockIn} 
+          <button
+            onClick={handleClockIn}
             disabled={clockInTime !== null}
             className={`clock-in-btn ${clockInTime ? 'disabled' : ''}`}
           >
             {clockInTime ? "Already Clocked In" : "🕐 Clock In"}
           </button>
 
-          <button 
-            onClick={handleClockOut} 
+          <button
+            onClick={handleClockOut}
             disabled={!clockInTime || saving}
             className={`clock-out-btn ${!clockInTime || saving ? 'disabled' : ''}`}
           >
@@ -255,9 +310,9 @@ export default function TimeTracker() {
 
         {entries.length > 0 && (
           <div className="entries-section">
-            <h3>Your Recent Entries ({entries.length} total)</h3>
+            <h3>Your Most Recent Entry</h3>
             <div className="entries-list">
-              {entries.slice(0, 5).map((entry) => (
+              {entries.slice(0, 1).map((entry) => (
                 <div key={entry.id} className="entry-item">
                   <div className="entry-task">
                     {entry.task || "No task description"}

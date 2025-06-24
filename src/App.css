@@ -445,3 +445,39 @@ button {
   font-size: 0.95rem;
   color: #555;
 }
+
+
+/* Summary */
+
+.user-daily-summary, .user-period-summary {
+  margin-top: 2rem;
+}
+
+.user-daily-summary h4, .user-period-summary h4 {
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+
+.entries-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.entries-table th,
+.entries-table td {
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.entries-table th {
+  background-color: #f5f5f5;
+  font-weight: 600;
+}
+
+.entries-table td {
+  background-color: #fff;
+}

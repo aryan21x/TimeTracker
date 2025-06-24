@@ -14,14 +14,19 @@ import { onAuthStateChanged } from "firebase/auth";
 const Summary = () => {
   const [entries, setEntries] = useState([]);
   const [userHours, setUserHours] = useState({});
+  const [dailyHours, setDailyHours] = useState({});
+  const [payPeriodHours, setPayPeriodHours] = useState({});
+  const [availablePeriods, setAvailablePeriods] = useState([]);
+  const [selectedPeriod, setSelectedPeriod] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const adminUIDs = ["EO2pmkGNxZaBYO8J1IvFJWJ8yWg2", "Rr9r9AEaAYWhctIQB1Ot2xWo0Yi1"]; // 🔁 Replace with real admin UIDs
+  const adminUIDs = [
+    "EO2pmkGNxZaBYO8J1IvFJWJ8yWg2",
+  ];
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
-      console.log("Summary - Auth state changed:", u ? u.email : "No user");
       if (u) {
         const isAdmin = adminUIDs.includes(u.uid);
         const enrichedUser = { ...u, isAdmin };
@@ -32,13 +37,11 @@ const Summary = () => {
       }
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
   const loadEntries = async (currentUser) => {
     try {
-      console.log("Loading entries...");
       const q = currentUser.isAdmin
         ? query(collection(db, "entries"), orderBy("clockInTime", "desc"))
         : query(
@@ -48,11 +51,7 @@ const Summary = () => {
           );
 
       const snapshot = await getDocs(q);
-      const data = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      console.log("Loaded entries:", data.length);
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setEntries(data);
       calculateUserHours(data);
     } catch (error) {
@@ -62,7 +61,6 @@ const Summary = () => {
 
   const handleDeleteEntry = async (entryId) => {
     if (!window.confirm("Are you sure you want to delete this entry?")) return;
-
     try {
       await deleteDoc(doc(db, "entries", entryId));
       const updated = entries.filter((entry) => entry.id !== entryId);
@@ -88,6 +86,47 @@ const Summary = () => {
     return `${hrs}h ${mins}m`;
   };
 
+  const getPayPeriodKey = (date) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    if (d.getDate() <= 21) {
+      const periodStart = new Date(year, month - 1, 22);
+      return `${periodStart.getFullYear()}-${String(
+        periodStart.getMonth() + 1
+      ).padStart(2, "0")}`;
+    } else {
+      return `${year}-${String(month + 1).padStart(2, "0")}`;
+    }
+  };
+
+  const groupEntriesByDay = (entries) => {
+    const daily = {};
+    for (const entry of entries) {
+      const { username, clockInTime, clockOutTime } = entry;
+      if (!username || !clockInTime || !clockOutTime) continue;
+      const dateKey = new Date(clockInTime).toISOString().split("T")[0];
+      const duration = calculateDurationInMinutes(clockInTime, clockOutTime);
+      if (!daily[username]) daily[username] = {};
+      daily[username][dateKey] = (daily[username][dateKey] || 0) + duration;
+    }
+    return daily;
+  };
+
+  const groupEntriesByPayPeriod = (entries) => {
+    const periods = {};
+    for (const entry of entries) {
+      const { username, clockInTime, clockOutTime } = entry;
+      if (!username || !clockInTime || !clockOutTime) continue;
+      const payPeriodKey = getPayPeriodKey(clockInTime);
+      const duration = calculateDurationInMinutes(clockInTime, clockOutTime);
+      if (!periods[username]) periods[username] = {};
+      periods[username][payPeriodKey] =
+        (periods[username][payPeriodKey] || 0) + duration;
+    }
+    return periods;
+  };
+
   const calculateUserHours = (entries) => {
     const totals = {};
     entries.forEach(({ username, clockInTime, clockOutTime }) => {
@@ -95,8 +134,19 @@ const Summary = () => {
       const duration = calculateDurationInMinutes(clockInTime, clockOutTime);
       totals[username] = (totals[username] || 0) + duration;
     });
-    console.log("Calculated user hours:", totals);
     setUserHours(totals);
+    const daily = groupEntriesByDay(entries);
+    const periodData = groupEntriesByPayPeriod(entries);
+    setDailyHours(daily);
+    setPayPeriodHours(periodData);
+
+    const allPeriods = new Set();
+    Object.values(periodData).forEach((userPeriods) => {
+      Object.keys(userPeriods).forEach((p) => allPeriods.add(p));
+    });
+    const sorted = Array.from(allPeriods).sort().reverse();
+    setAvailablePeriods(sorted);
+    setSelectedPeriod((prev) => prev || sorted[0]);
   };
 
   const formatDate = (dateStr) => {
@@ -113,11 +163,7 @@ const Summary = () => {
   };
 
   if (loading) {
-    return (
-      <div className="summary-container">
-        <p>Loading...</p>
-      </div>
-    );
+    return <div className="summary-container"><p>Loading...</p></div>;
   }
 
   if (!user) {
@@ -203,6 +249,62 @@ const Summary = () => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {availablePeriods.length > 0 && (
+        <div style={{ margin: "1rem 0" }}>
+          <label htmlFor="periodSelect">Select Pay Period: </label>
+          <select
+            id="periodSelect"
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(e.target.value)}
+          >
+            {availablePeriods.map((period) => (
+              <option key={period} value={period}>
+                {period}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {Object.keys(payPeriodHours).length > 0 && selectedPeriod && (
+        <div className="user-period-summary">
+          <h3>Pay Period Summary ({selectedPeriod})</h3>
+          {Object.entries(dailyHours).map(([username, dailyData]) => {
+            const userDates = Object.entries(dailyData).filter(
+              ([date]) => getPayPeriodKey(date) === selectedPeriod
+            );
+            if (userDates.length === 0) return null;
+            return (
+              <div key={username} style={{ marginBottom: "2rem" }}>
+                <h4>{username}</h4>
+                <table className="entries-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Earn Code</th>
+                      <th>Shift</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userDates
+                      .sort(([a], [b]) => new Date(a) - new Date(b))
+                      .map(([date, minutes]) => (
+                        <tr key={date}>
+                          <td>{new Date(date).toLocaleDateString()}</td>
+                          <td>REG, Hours Worked</td>
+                          <td>1</td>
+                          <td>{(minutes / 60).toFixed(2)} Hours</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
